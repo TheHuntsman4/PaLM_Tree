@@ -4,9 +4,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
-import org.json.JSONArray;
-import org.json.JSONObject;
+// import org.json.JSONArray;
+// import org.json.JSONObject;
 
 public class Prototype {
     static class Request {
@@ -28,6 +30,7 @@ public class Prototype {
     }
 
     public static void main(String[] args) {
+        List<String> responses = new ArrayList<>();
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -35,13 +38,14 @@ public class Prototype {
             System.out.println("1. Default Request");
             System.out.println("2. Custom Request");
             System.out.println("3. Custom Request with number of tokens");
-            System.out.println("4. Exit");
+            System.out.println("4. Print the resonse until now");
+            System.out.println("5. Exit");
             System.out.print("Enter your choice (1/2/3/4): ");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
 
-            String request;
+            String request="hello PaLM";
             int numberOfTokens;
 
             switch (choice) {
@@ -62,6 +66,9 @@ public class Prototype {
                     Request customRequestWithTokens = new Request(request, numberOfTokens);
                     break;
                 case 4:
+                    printResponses(responses);
+                    break;
+                case 5:
                     System.out.println("Exiting...");
                     scanner.close();
                     return;
@@ -71,9 +78,9 @@ public class Prototype {
             }
 
             System.out.println("Final String: " + request);
-
-            // Call the API and print the response
+            
             String apiResponse = APITest(request);
+            responses.add(apiResponse.toString());
             System.out.println("API Response: " + apiResponse);
         }
     }
@@ -84,17 +91,23 @@ public class Prototype {
 
         try {
             String jsonResponse = sendAPIRequest(apiUrl, requestBody);
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
-            JSONObject candidateObject = candidatesArray.getJSONObject(0);
-            String output = candidateObject.getString("output");
-            return output;
+            // JSONObject jsonObject = new JSONObject(jsonResponse);
+            // JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
+            // JSONObject candidateObject = candidatesArray.getJSONObject(0);
+            // String output = candidateObject.getString("output");
+            // return output;
+            return jsonResponse;
         } catch (IOException e) {
             e.printStackTrace();
             return "IOException";
         }
     }
-
+    private static void printResponses(List<String> responses) {
+    System.out.println("\n--- All Responses ---");
+        for (int i = 0; i < responses.size(); i++) {
+            System.out.println("Response " + (i + 1) + ": " + responses.get(i));
+        }
+    }
     private static String sendAPIRequest(String apiUrl, String requestBody) throws IOException {
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -123,4 +136,3 @@ public class Prototype {
         }
     }
 }
-
