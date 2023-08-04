@@ -7,12 +7,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-// import org.json.JSONArray;
-// import org.json.JSONObject;
 
 public class Prototype {
     static class Request {
-        public String request;
+        public String request = "hello world";
         public int numberOfTokens;
 
         Request() {
@@ -38,14 +36,14 @@ public class Prototype {
             System.out.println("1. Default Request");
             System.out.println("2. Custom Request");
             System.out.println("3. Custom Request with number of tokens");
-            System.out.println("4. Print the resonse until now");
+            System.out.println("4. Print the responses until now");
             System.out.println("5. Exit");
-            System.out.print("Enter your choice (1/2/3/4): ");
+            System.out.print("Enter your choice (1/2/3/4/5): ");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
 
-            String request="hello PaLM";
+            String request;
             int numberOfTokens;
 
             switch (choice) {
@@ -78,36 +76,35 @@ public class Prototype {
             }
 
             System.out.println("Final String: " + request);
-            
+
+            // Call the API and print the response
             String apiResponse = APITest(request);
             responses.add(apiResponse.toString());
-            System.out.println("API Response: " + apiResponse);
+            String output = extractOutputFromJSON(apiResponse);
+            System.out.println("API Response: " + output);
         }
     }
 
-    public static String APITest(String text) {
+    private static void printResponses(List<String> responses) {
+        System.out.println("\n--- All Responses ---");
+        for (int i = 0; i < responses.size(); i++) {
+            System.out.println("Response " + (i + 1) + ": " + responses.get(i));
+        }
+    }
+
+    private static String APITest(String text) {
         String apiUrl = "https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=AIzaSyBWnPy4-R6VLvU-jiTvBo-aucC1Tj3f0_Y";
         String requestBody = "{ \"prompt\": { \"text\": \"" + text + "\" } }";
 
         try {
             String jsonResponse = sendAPIRequest(apiUrl, requestBody);
-            // JSONObject jsonObject = new JSONObject(jsonResponse);
-            // JSONArray candidatesArray = jsonObject.getJSONArray("candidates");
-            // JSONObject candidateObject = candidatesArray.getJSONObject(0);
-            // String output = candidateObject.getString("output");
-            // return output;
             return jsonResponse;
         } catch (IOException e) {
             e.printStackTrace();
             return "IOException";
         }
     }
-    private static void printResponses(List<String> responses) {
-    System.out.println("\n--- All Responses ---");
-        for (int i = 0; i < responses.size(); i++) {
-            System.out.println("Response " + (i + 1) + ": " + responses.get(i));
-        }
-    }
+
     private static String sendAPIRequest(String apiUrl, String requestBody) throws IOException {
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -134,5 +131,11 @@ public class Prototype {
         } else {
             throw new IOException("API request failed with response code: " + responseCode);
         }
+    }
+
+    private static String extractOutputFromJSON(String jsonResponse) {
+        int startIndex = jsonResponse.indexOf("\"output\": \"") + 11;
+        int endIndex = jsonResponse.indexOf("\"", startIndex);
+        return jsonResponse.substring(startIndex, endIndex);
     }
 }
