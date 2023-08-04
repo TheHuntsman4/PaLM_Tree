@@ -1,7 +1,3 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,8 +6,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-public class Prototype {
+public class PrototypeCLI {
     static class Request {
         public String request = "tell me about yourself";
         public int numberOfTokens;
@@ -45,78 +42,69 @@ public class Prototype {
         }
     }
 
-    private static List<String> responses = new ArrayList<>();
-    private static JTextArea responseArea;
-
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Language Model Prototype");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600); // Set window size to 800x600
-        frame.setLayout(new BorderLayout());
+        List<String> responses = new ArrayList<>();
+        Scanner scanner = new Scanner(System.in);
 
-        JPanel leftPanel = new JPanel();
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS)); 
-        frame.add(leftPanel, BorderLayout.WEST); 
+        while (true) {
+            System.out.println("Select a request:");
+            System.out.println("1. Default Request");
+            System.out.println("2. Custom Request");
+            System.out.println("3. Custom Request with number of tokens");
+            System.out.println("4. Print the response until now");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice (1/2/3/4): ");
 
-        JButton defaultBtn = new JButton("Default Request");
-        JButton customBtn = new JButton("Custom Request");
-        JButton customWithTokensBtn = new JButton("Custom Request with Number of Tokens");
+            int choice = scanner.nextInt();
+            scanner.nextLine();
 
-        
-        int buttonWidth = 320;
-        Dimension buttonSize = new Dimension(buttonWidth, customBtn.getPreferredSize().height);
-        defaultBtn.setPreferredSize(buttonSize);
-        defaultBtn.setMaximumSize(buttonSize);
-        customBtn.setPreferredSize(buttonSize);
-        customBtn.setMaximumSize(buttonSize);
-        customWithTokensBtn.setPreferredSize(buttonSize);
-        customWithTokensBtn.setMaximumSize(buttonSize);
+            String request = "hello PaLM";
+            int numberOfTokens;
 
-        leftPanel.add(defaultBtn);
-        leftPanel.add(customBtn);
-        leftPanel.add(customWithTokensBtn);
-
-        frame.add(leftPanel, BorderLayout.WEST);
-
-        responseArea = new JTextArea();
-        frame.add(new JScrollPane(responseArea), BorderLayout.CENTER);
-
-        defaultBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                processRequest(new Request());
+            switch (choice) {
+                case 1:
+                    Request defaultRequest = new Request();
+                    request = defaultRequest.getRequestString();
+                    break;
+                case 2:
+                    System.out.print("Enter your custom request: ");
+                    request = scanner.nextLine();
+                    Request customRequest = new CustomRequest(request);
+                    request = customRequest.getRequestString();
+                    break;
+                case 3:
+                    System.out.print("Enter your custom request: ");
+                    request = scanner.nextLine();
+                    System.out.print("Enter the number of tokens: ");
+                    numberOfTokens = scanner.nextInt();
+                    Request customRequestWithTokens = new Request(request, numberOfTokens);
+                    request = customRequestWithTokens.getRequestString();
+                    break;
+                case 4:
+                    printResponses(responses);
+                    break;
+                case 5:
+                    System.out.println("Exiting...");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice!");
+                    continue;
             }
-        });
 
-        customBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String request = JOptionPane.showInputDialog(frame, "Enter your custom request:");
-                if (request != null && !request.isEmpty()) {
-                    processRequest(new CustomRequest(request));
-                }
-            }
-        });
-
-        customWithTokensBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String request = JOptionPane.showInputDialog(frame, "Enter your custom request:");
-                if (request != null && !request.isEmpty()) {
-                    int numberOfTokens = Integer.parseInt(JOptionPane.showInputDialog(frame, "Enter the number of tokens:"));
-                    processRequest(new Request(request, numberOfTokens));
-                }
-            }
-        });
-
-        frame.setVisible(true);
+            System.out.println("Final String: " + request);
+            String apiResponse = APITest(request);
+            String output = extractOutputField(apiResponse);
+            responses.add(output);
+            System.out.println("API Response: " + output);
+        }
     }
 
-    private static void processRequest(Request request) {
-        String apiResponse = APITest(request.getRequestString());
-        String output = extractOutputField(apiResponse);
-        responses.add(output);
-        responseArea.append("API Response: " + output + "\n");
+    private static void printResponses(List<String> responses) {
+        System.out.println("\n--- All Responses ---");
+        for (int i = 0; i < responses.size(); i++) {
+            System.out.println("Response " + (i + 1) + ": " + responses.get(i));
+        }
     }
 
     private static String APITest(String text) {
@@ -139,7 +127,7 @@ public class Prototype {
             int endIndex = jsonString.indexOf("\"safetyRatings\":", startIndex);
             if (endIndex != -1) {
                 String outputField = jsonString.substring(startIndex, endIndex).trim();
-                
+                // Remove the surrounding quotes and escape sequences
                 outputField = outputField.replaceAll("\\\\n", "\n");
                 outputField = outputField.replaceAll("\"", "");
                 return outputField;
@@ -147,6 +135,8 @@ public class Prototype {
         }
         return "Output field not found";
     }
+
+
 
     private static String sendAPIRequest(String apiUrl, String requestBody) throws IOException {
         URL url = new URL(apiUrl);
