@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Prototype {
     static class Request {
@@ -45,84 +46,104 @@ public class Prototype {
         }
     }
 
+    private static JTextArea responseTextArea;
     private static List<String> responses = new ArrayList<>();
-    private static JTextArea responseArea;
+    private static List<String> requestedInputs = new ArrayList<>();
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Language Model Prototype");
+        Scanner scanner = new Scanner(System.in);
+
+        // Create the JFrame to hold the UI components
+        JFrame frame = new JFrame("PaLM Prototype");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1800, 1600); // Set window size to 800x600
+        frame.setSize(800, 400);
         frame.setLayout(new BorderLayout());
 
-        JPanel leftPanel = new JPanel();
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS)); 
-        frame.add(leftPanel, BorderLayout.WEST); 
+        // Create a JTextArea for displaying the responses
+        responseTextArea = new JTextArea();
+        responseTextArea.setEditable(false);
+        JScrollPane responseScrollPane = new JScrollPane(responseTextArea);
 
-        JButton defaultBtn = new JButton("Default Request");
-        JButton customBtn = new JButton("Custom Request");
-        JButton customWithTokensBtn = new JButton("Custom Request with Number of Tokens");
+        // Create a JPanel for the buttons
+        JPanel buttonPanel = new JPanel(new GridLayout(0, 1));
 
-        
-        int buttonWidth = 320;
-        int buttonHeight  = 200;
-        Dimension buttonSize = new Dimension(buttonWidth, buttonHeight);
-        Font buttonFont = new Font("Arial",Font.PLAIN,24);
-        defaultBtn.setFont(buttonFont);
-        defaultBtn.setPreferredSize(buttonSize);
-        defaultBtn.setMaximumSize(buttonSize);
-        customBtn.setFont(buttonFont);
-        customBtn.setPreferredSize(buttonSize);
-        customBtn.setMaximumSize(buttonSize);
-        customWithTokensBtn.setFont(buttonFont);
-        customWithTokensBtn.setPreferredSize(buttonSize);
-        customWithTokensBtn.setMaximumSize(buttonSize);
-
-        leftPanel.add(defaultBtn);
-        leftPanel.add(customBtn);
-        leftPanel.add(customWithTokensBtn);
-
-        frame.add(leftPanel, BorderLayout.WEST);
-
-        responseArea = new JTextArea();
-        responseArea.setFont(new Font("Arial", Font.PLAIN, 32));
-        frame.add(new JScrollPane(responseArea), BorderLayout.CENTER);
-
-        defaultBtn.addActionListener(new ActionListener() {
+        // Add buttons to the buttonPanel
+        JButton defaultButton = new JButton("Default Request");
+        defaultButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 processRequest(new Request());
             }
         });
 
-        customBtn.addActionListener(new ActionListener() {
+        JButton customButton = new JButton("Custom Request");
+        customButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String request = JOptionPane.showInputDialog(frame, "Enter your custom request:");
-                if (request != null && !request.isEmpty()) {
-                    processRequest(new CustomRequest(request));
+                String customRequest = JOptionPane.showInputDialog(frame, "Enter your custom request:");
+                processRequest(new CustomRequest(customRequest));
+            }
+        });
+
+        JButton customWithTokensButton = new JButton("Custom Request with Tokens");
+        customWithTokensButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String customRequest = JOptionPane.showInputDialog(frame, "Enter your custom request:");
+                String tokens = JOptionPane.showInputDialog(frame, "Enter the number of tokens:");
+                try {
+                    int numberOfTokens = Integer.parseInt(tokens);
+                    processRequest(new Request(customRequest, numberOfTokens));
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "Invalid number of tokens!", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
 
-        customWithTokensBtn.addActionListener(new ActionListener() {
+        JButton printButton = new JButton("Print All Conversations");
+        printButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String request = JOptionPane.showInputDialog(frame, "Enter your custom request:");
-                if (request != null && !request.isEmpty()) {
-                    int numberOfTokens = Integer.parseInt(JOptionPane.showInputDialog(frame, "Enter the number of tokens:"));
-                    processRequest(new Request(request, numberOfTokens));
-                }
+                printRequestsAndResponses(requestedInputs, responses);
             }
         });
 
+        JButton exitButton = new JButton("Exit");
+        exitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Exiting...");
+                frame.dispose();
+            }
+        });
+
+        buttonPanel.add(defaultButton);
+        buttonPanel.add(customButton);
+        buttonPanel.add(customWithTokensButton);
+        buttonPanel.add(printButton);
+        buttonPanel.add(exitButton);
+
+        // Add components to the JFrame
+        frame.add(responseScrollPane, BorderLayout.CENTER);
+        frame.add(buttonPanel, BorderLayout.EAST);
         frame.setVisible(true);
     }
 
     private static void processRequest(Request request) {
         String apiResponse = APITest(request.getRequestString());
         String output = extractOutputField(apiResponse);
+        requestedInputs.add(request.getRequestString());
         responses.add(output);
-        responseArea.append("API Response: " + output + "\n");
+        responseTextArea.append("API Response for request '" + request.getRequestString() + "':\n" + output + "\n\n");
+    }
+
+    private static void printRequestsAndResponses(List<String> requests, List<String> responses) {
+        responseTextArea.append("\n--------------------- All Requests and Responses ---------------------\n");
+        for (int i = 0; i < responses.size(); i++) {
+            responseTextArea.append("--------------------- Conversation - " + (i + 1) + ": ---------------------\n");
+            responseTextArea.append("Request " + (i + 1) + ": " + requests.get(i) + "\n");
+            responseTextArea.append("Response " + (i + 1) + ": " + responses.get(i) + "\n");
+        }
     }
 
     private static String APITest(String text) {
@@ -145,7 +166,7 @@ public class Prototype {
             int endIndex = jsonString.indexOf("\"safetyRatings\":", startIndex);
             if (endIndex != -1) {
                 String outputField = jsonString.substring(startIndex, endIndex).trim();
-                
+                // Remove the surrounding quotes and escape sequences
                 outputField = outputField.replaceAll("\\\\n", "\n");
                 outputField = outputField.replaceAll("\"", "");
                 return outputField;
