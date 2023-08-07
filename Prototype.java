@@ -51,7 +51,7 @@ public class Prototype {
     public static void main(String[] args) {
         JFrame frame = new JFrame("Language Model Prototype");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600); // Set window size to 800x600
+        frame.setSize(1800, 1600); // Set window size to 800x600
         frame.setLayout(new BorderLayout());
 
         JPanel leftPanel = new JPanel();
@@ -64,11 +64,16 @@ public class Prototype {
 
         
         int buttonWidth = 320;
-        Dimension buttonSize = new Dimension(buttonWidth, customBtn.getPreferredSize().height);
+        int buttonHeight  = 200;
+        Dimension buttonSize = new Dimension(buttonWidth, buttonHeight);
+        Font buttonFont = new Font("Arial",Font.PLAIN,24);
+        defaultBtn.setFont(buttonFont);
         defaultBtn.setPreferredSize(buttonSize);
         defaultBtn.setMaximumSize(buttonSize);
+        customBtn.setFont(buttonFont);
         customBtn.setPreferredSize(buttonSize);
         customBtn.setMaximumSize(buttonSize);
+        customWithTokensBtn.setFont(buttonFont);
         customWithTokensBtn.setPreferredSize(buttonSize);
         customWithTokensBtn.setMaximumSize(buttonSize);
 
@@ -79,6 +84,7 @@ public class Prototype {
         frame.add(leftPanel, BorderLayout.WEST);
 
         responseArea = new JTextArea();
+        responseArea.setFont(new Font("Arial", Font.PLAIN, 32));
         frame.add(new JScrollPane(responseArea), BorderLayout.CENTER);
 
         defaultBtn.addActionListener(new ActionListener() {
