@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Prototype {
+public abstract class Prototype {
     static class Request {
         public String request = "tell me about yourself";
         public int numberOfTokens;
